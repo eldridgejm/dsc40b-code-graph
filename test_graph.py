@@ -1,4 +1,4 @@
-from dsc40graph import UndirectedGraph, DirectedGraph
+from dsc40graph import UndirectedGraph, DirectedGraph, DoesNotExistError
 
 import pytest
 
@@ -141,6 +141,7 @@ def test_add_node_already_graph_does_nothing():
     g.add_node(3)
 
     assert len(g.neighbors(3)) == 1
+    assert len(g.nodes) == 3
 
 
 def test_directed_has_edge():
@@ -194,6 +195,31 @@ def test_remove_node_removes_edges_too_undirected():
     assert (5,1) not in g.edges
     assert len(g.edges) == 0
 
+
+def test_remove_missing_node_raises_undirected():
+    # given
+    g = UndirectedGraph()
+    g.add_node(1)
+    g.add_node(2)
+    g.add_node(3)
+
+    # when
+    with pytest.raises(DoesNotExistError):
+        g.remove_node(4)
+
+
+def test_remove_missing_node_raises_directed():
+    # given
+    g = DirectedGraph()
+    g.add_node(1)
+    g.add_node(2)
+    g.add_node(3)
+
+    # when
+    with pytest.raises(DoesNotExistError):
+        g.remove_node(4)
+
+
 def test_undirected_graphs_have_no_self_loops():
     # given
     g = UndirectedGraph()
@@ -213,3 +239,62 @@ def __edge_view_returns_false_if_node_isnt_in_graph():
 
     # then
     assert (5, 2) not in g
+
+
+def test_remove_edge_undirected():
+    # given
+    g = UndirectedGraph()
+    g.add_edge(1, 2)
+    g.add_edge(2, 3)
+    g.add_edge(3, 1)
+
+    # when
+    g.remove_edge(2, 1)
+
+    # then
+    assert (1, 2) not in g.edges
+    assert (2, 1) not in g.edges
+    assert len(g.edges) == 2
+    assert len(g.nodes) == 3
+
+
+def test_remove_edge_directed():
+    # given
+    g = DirectedGraph()
+    g.add_edge(1, 2)
+    g.add_edge(2, 1)
+    g.add_edge(2, 3)
+    g.add_edge(3, 1)
+
+    # when
+    g.remove_edge(1, 2)
+
+    # then
+    assert (1, 2) not in g.edges
+    assert (2, 1) in g.edges
+    assert len(g.edges) == 3
+    assert len(g.nodes) == 3
+
+
+def test_remove_missing_edge_raises_undirected():
+    # given
+    g = UndirectedGraph()
+    g.add_edge(1, 2)
+    g.add_edge(2, 3)
+    g.add_edge(3, 1)
+
+    # when
+    with pytest.raises(DoesNotExistError):
+        g.remove_edge(2, 4)
+
+
+def test_remove_missing_edge_raises_directed():
+    # given
+    g = DirectedGraph()
+    g.add_edge(1, 2)
+    g.add_edge(2, 3)
+    g.add_edge(3, 1)
+
+    # when
+    with pytest.raises(DoesNotExistError):
+        g.remove_edge(2, 4)

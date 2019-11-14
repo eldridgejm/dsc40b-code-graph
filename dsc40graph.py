@@ -1,6 +1,14 @@
 """Efficient undirected and directed graph data structures."""
 
 
+class Error(Exception):
+    """Base class for all errors specific to this module."""
+
+
+class DoesNotExistError(Error):
+    """The node/edge does not exist."""
+
+
 class _EdgeView:
     """Base class for views into a graph's edges."""
 
@@ -83,6 +91,8 @@ class _Graph:
         """
         Add a node with the given label.
 
+        If the node already exists, nothing is done.
+
         Average case time complexity: Theta(1).
 
         Parameters
@@ -146,6 +156,8 @@ class UndirectedGraph(_Graph):
     def add_edge(self, u_label, v_label):
         """Add an undirected edge to the graph.
 
+        If the edge already exists, nothing is done.
+
         Average case time complexity: Theta(1).
 
         Parameters
@@ -188,15 +200,48 @@ class UndirectedGraph(_Graph):
         label
             The label of the node to be removed.
 
+        Raises
+        ------
+        DoesNotExistError
+            If the node is not in the graph.
+
         """
-        if label not in self.nodes:
-            return
+        try:
+            neighbors = self.adj[label]
+        except KeyError:
+            raise DoesNotExistError(f'The node "{label}" does not exist.')
 
         for neighbor in self.adj[label]:
             self.adj[neighbor].discard(label)
             self._number_of_edges -= 1
 
         del self.adj[label]
+
+    def remove_edge(self, u_label, v_label):
+        """Remove the edge from the graph.
+
+        Average case time complexity: Theta(1)
+
+        Parameters
+        ----------
+        u_label
+            The label of one of the nodes in the edge.
+        v_label
+            The label of the other node.
+
+        Raises
+        ------
+        DoesNotExistError
+            If the edge is not in the graph.
+
+        """
+        if (u_label, v_label) not in self.edges:
+            raise DoesNotExistError(f'The edge "({u_label}, {v_label})" does not exist.')
+
+        self.adj[u_label].discard(v_label)
+        self.adj[v_label].discard(u_label)
+        self._number_of_edges -= 1
+
 
     def neighbors(self, label):
         """The neighbors of the node.
@@ -211,6 +256,11 @@ class UndirectedGraph(_Graph):
         set
             The neighbors as a Python set. This set should not be modified.
 
+        Note
+        ----
+        Since the return value is a set, there is no guarantee about the orders
+        of the neighbors.
+
         """
         return self.adj[label]
 
@@ -224,6 +274,8 @@ class DirectedGraph(_Graph):
     def add_edge(self, u_label, v_label):
         """Add a directed edge to the graph.
 
+        If the edge already exists, nothing is done.
+
         Average case time complexity: Theta(1).
 
         Parameters
@@ -233,8 +285,8 @@ class DirectedGraph(_Graph):
         v_label
             Label of the child node.
 
-        Notes
-        -----
+        Note
+        ----
         If either of the nodes is not in the graph, the node is created.
 
         """
@@ -259,9 +311,14 @@ class DirectedGraph(_Graph):
         label
             The label of the node to be removed.
 
+        Raises
+        ------
+        DoesNotExistError
+            If the node is not in the graph.
+
         """
         if label not in self.nodes:
-            return
+            raise DoesNotExistError(f'The node "{label}" does not exist.')
 
         # in case there is a self-loop, since we can't modify set while iterating
         if label in self.back_adj[label]:
@@ -276,6 +333,31 @@ class DirectedGraph(_Graph):
         self._number_of_edges -= len(self.adj[label])
         del self.adj[label]
 
+    def remove_edge(self, u_label, v_label):
+        """Remove the edge from the graph.
+
+        Average case time complexity: Theta(1)
+
+        Parameters
+        ----------
+        u_label
+            The label of one of the nodes in the edge.
+        v_label
+            The label of the other node.
+
+        Raises
+        ------
+        DoesNotExistError
+            If the edge is not in the graph.
+
+        """
+        if (u_label, v_label) not in self.edges:
+            raise DoesNotExistError(f'The edge "({u_label}, {v_label})" does not exist.')
+
+        self.adj[u_label].discard(v_label)
+        self.back_adj[v_label].discard(u_label)
+        self._number_of_edges -= 1
+
     def predecessors(self, label):
         """The predecessors of the node.
 
@@ -288,6 +370,12 @@ class DirectedGraph(_Graph):
         -------
         set
             The predecessors as a Python set. This set should not be modified.
+
+        Note
+        ----
+        Since the return value is a set, there is no guarantee about the orders
+        of the neighbors.
+
 
         """
         return self.back_adj[label]
@@ -304,6 +392,11 @@ class DirectedGraph(_Graph):
         -------
         set
             The successors as a Python set. This set should not be modified.
+
+        Note
+        ----
+        Since the return value is a set, there is no guarantee about the orders
+        of the neighbors.
 
         """
         return self.adj[label]

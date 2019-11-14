@@ -1,0 +1,2 @@
+pytest
+sphinx-rtd-theme>=0.4.3
