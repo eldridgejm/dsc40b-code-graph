@@ -96,12 +96,45 @@ class _Graph:
 
     @property
     def nodes(self):
-        """A view into the graph's nodes."""
+        """A view into the graph's nodes.
+
+        Supports average case constant time node query. 
+
+        Example
+        -------
+        >>> graph = UndirectedGraph()
+        >>> graph.add_node('Red')
+        >>> graph.add_node('Blue')
+        >>> graph.add_node('Green')
+        >>> 'Orange' in graph.nodes
+        False
+        >>> 'Red' in graph.nodes
+        True
+        >>> len(graph.nodes)
+        3
+
+        """
         return self.adj.keys()
 
     @property
     def edges(self):
-        """A view into the graph's edges."""
+        """A view into the graph's edges.
+
+        Supports average case constant time edge query.
+
+        Example
+        -------
+        >>> graph = UndirectedGraph()
+        >>> graph.add_edge('Red', 'Blue')
+        >>> graph.add_edge('Blue', 'Green')
+        >>> ('Red', 'Blue') in graph.edges
+        True
+        >>> ('Blue', 'Red') in graph.edges
+        True
+        >>> ('Red', 'Green') in graph.edges
+        False
+        
+        """
         return self._edge_view_factory(self.adj, self._number_of_edges)
 
 
@@ -111,7 +144,7 @@ class UndirectedGraph(_Graph):
         super().__init__(_edge_view_factory)
 
     def add_edge(self, u_label, v_label):
-        """Add an edge to the graph.
+        """Add an undirected edge to the graph.
 
         Average case time complexity: Theta(1).
 
@@ -147,6 +180,8 @@ class UndirectedGraph(_Graph):
 
     def remove_node(self, label):
         """Remove a node grom the graph.
+
+        Average case time complexity: Theta(# of neighbors)
         
         Parameters
         ----------
@@ -163,8 +198,21 @@ class UndirectedGraph(_Graph):
 
         del self.adj[label]
 
-    def neighbors(self, u_label):
-        return self.adj[u_label]
+    def neighbors(self, label):
+        """The neighbors of the node.
+
+        Parameters
+        ----------
+        label
+            The label of the node whose neighbors should be retrieved.
+
+        Returns
+        -------
+        set
+            The neighbors as a Python set. This set should not be modified.
+
+        """
+        return self.adj[label]
 
 
 class DirectedGraph(_Graph):
@@ -174,8 +222,24 @@ class DirectedGraph(_Graph):
         self.back_adj = dict()
 
     def add_edge(self, u_label, v_label):
-        """Average case: Theta(1)."""
+        """Add a directed edge to the graph.
+
+        Average case time complexity: Theta(1).
+
+        Parameters
+        ----------
+        u_label
+            Label of the parent node.
+        v_label
+            Label of the child node.
+
+        Notes
+        -----
+        If either of the nodes is not in the graph, the node is created.
+
+        """
         for x in {u_label, v_label}:
+
             if x not in self.adj:
                 self.adj[x] = set()
             if x not in self.back_adj:
@@ -185,28 +249,65 @@ class DirectedGraph(_Graph):
         self.back_adj[v_label].add(u_label)
         self._number_of_edges += 1
 
-    def remove_node(self, node):
-        if node not in self.nodes:
+    def remove_node(self, label):
+        """Remove a node grom the graph.
+
+        Average case time complexity: Theta(# of predecessors)
+        
+        Parameters
+        ----------
+        label
+            The label of the node to be removed.
+
+        """
+        if label not in self.nodes:
             return
 
         # in case there is a self-loop, since we can't modify set while iterating
-        if node in self.back_adj[node]:
-            self.adj[node].discard(node)
-            self.back_adj[node].discard(node)
+        if label in self.back_adj[label]:
+            self.adj[label].discard(label)
+            self.back_adj[label].discard(label)
             self._number_of_edges -= 1
 
-        for parent in self.back_adj[node]:
-            self.adj[parent].discard(node)
+        for parent in self.back_adj[label]:
+            self.adj[parent].discard(label)
             self._number_of_edges -= 1
 
-        self._number_of_edges -= len(self.adj[node])
-        del self.adj[node]
+        self._number_of_edges -= len(self.adj[label])
+        del self.adj[label]
 
-    def predecessors(self, node):
-        return self.back_adj[node]
+    def predecessors(self, label):
+        """The predecessors of the node.
 
-    def successors(self, node):
-        return self.adj[node]
+        Parameters
+        ----------
+        label
+            The label of the node whose predecessors should be retrieved.
 
-    def neighbors(self, node):
-        return self.successors(node)
+        Returns
+        -------
+        set
+            The predecessors as a Python set. This set should not be modified.
+
+        """
+        return self.back_adj[label]
+
+    def successors(self, label):
+        """The successors of the node.
+
+        Parameters
+        ----------
+        label
+            The label of the node whose successors should be retrieved.
+
+        Returns
+        -------
+        set
+            The successors as a Python set. This set should not be modified.
+
+        """
+        return self.adj[label]
+
+    def neighbors(self, label):
+        """Alias of successors. Provided for convenience."""
+        return self.successors(label)
